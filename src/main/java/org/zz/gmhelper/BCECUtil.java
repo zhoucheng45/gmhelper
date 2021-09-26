@@ -28,6 +28,8 @@ import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
@@ -198,14 +200,14 @@ public class BCECUtil {
         return new ECPublicKeyParameters(curve.decodePoint(encodedPubKey), domainParameters);
     }
 
-    public static ECPrivateKeyParameters convertPrivateKeyToParameters(BCECPrivateKey ecPriKey) {
+    public static ECPrivateKeyParameters convertPrivateKeyToParameters(ECPrivateKey ecPriKey) {
         ECParameterSpec parameterSpec = ecPriKey.getParameters();
         ECDomainParameters domainParameters = new ECDomainParameters(parameterSpec.getCurve(), parameterSpec.getG(),
                 parameterSpec.getN(), parameterSpec.getH());
         return new ECPrivateKeyParameters(ecPriKey.getD(), domainParameters);
     }
 
-    public static ECPublicKeyParameters convertPublicKeyToParameters(BCECPublicKey ecPubKey) {
+    public static ECPublicKeyParameters convertPublicKeyToParameters(ECPublicKey ecPubKey) {
         ECParameterSpec parameterSpec = ecPubKey.getParameters();
         ECDomainParameters domainParameters = new ECDomainParameters(parameterSpec.getCurve(), parameterSpec.getG(),
                 parameterSpec.getN(), parameterSpec.getH());

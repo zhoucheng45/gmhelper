@@ -7,15 +7,21 @@ import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 import org.zz.gmhelper.BCECUtil;
 import org.zz.gmhelper.SM2Util;
+import org.zz.gmhelper.Util;
 import org.zz.gmhelper.test.util.FileUtil;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Arrays;
 
 public class SM2UtilTest extends GMBaseTest {
@@ -73,11 +79,12 @@ public class SM2UtilTest extends GMBaseTest {
                 + ByteUtils.toHexString(pubKey.getQ().getAffineYCoord().getEncoded()).toUpperCase());
             System.out.println("Pub Point Hex:"
                 + ByteUtils.toHexString(pubKey.getQ().getEncoded(false)).toUpperCase());
-
-            byte[] encryptedData = SM2Util.encrypt(pubKey, SRC_DATA_24B);
+            String str = "abc123测试";
+            byte[] encryptedData = SM2Util.encrypt(pubKey, str.getBytes(StandardCharsets.UTF_8));
             System.out.println("SM2 encrypt result:\n" + ByteUtils.toHexString(encryptedData));
             byte[] decryptedData = SM2Util.decrypt(priKey, encryptedData);
             System.out.println("SM2 decrypt result:\n" + ByteUtils.toHexString(decryptedData));
+            System.out.println("SM2 decrypt result:\n" + new String(decryptedData));
             if (!Arrays.equals(decryptedData, SRC_DATA_24B)) {
                 Assert.fail();
             }
@@ -299,5 +306,19 @@ public class SM2UtilTest extends GMBaseTest {
             ex.printStackTrace();
             Assert.fail();
         }
+    }
+
+    @Test
+    public void test1() throws Exception{
+        String str = "abc123测试";
+        KeyPair keyPair = SM2Util.generateKeyPair();
+
+        PrivateKey aPrivate = keyPair.getPrivate();
+        PublicKey aPublic = keyPair.getPublic();
+        BCECPrivateKey bcecPrivateKey = SM2Util.convertToBCECPrivateKey(aPrivate.getEncoded());
+        BCECPublicKey ecPublicKey = SM2Util.convertToBCECPublicKey(aPublic.getEncoded());
+        byte[] encrypt = SM2Util.encrypt(ecPublicKey, str.getBytes(StandardCharsets.UTF_8));
+        byte[] decrypt = SM2Util.decrypt(bcecPrivateKey, encrypt);
+        System.out.println(new String(decrypt));
     }
 }

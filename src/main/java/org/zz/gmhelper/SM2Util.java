@@ -21,18 +21,16 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.gm.SM2P256V1Curve;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
-import java.security.spec.ECFieldFp;
-import java.security.spec.EllipticCurve;
+import java.security.*;
+import java.security.spec.*;
 
 public class SM2Util extends GMBaseUtil {
     //////////////////////////////////////////////////////////////////////////////////////
@@ -118,10 +116,46 @@ public class SM2Util extends GMBaseUtil {
      * @return 默认输出C1C3C2顺序的密文。C1为65字节第1字节为压缩标识，这里固定为0x04，后面64字节为xy分量各32字节。C3为32字节。C2长度与原文一致。
      * @throws InvalidCipherTextException
      */
-    public static byte[] encrypt(BCECPublicKey pubKey, byte[] srcData) throws InvalidCipherTextException {
+    public static byte[] encrypt(ECPublicKey pubKey, byte[] srcData) throws InvalidCipherTextException {
         ECPublicKeyParameters pubKeyParameters = BCECUtil.convertPublicKeyToParameters(pubKey);
         return encrypt(Mode.C1C3C2, pubKeyParameters, srcData);
     }
+
+    /**
+     * byte数组转成私钥
+     * @param privateBytes
+     * @return
+     */
+    public static BCECPrivateKey convertToBCECPrivateKey(byte[] privateBytes) {
+        PKCS8EncodedKeySpec eks2 = new PKCS8EncodedKeySpec(privateBytes);
+        try {
+            KeyFactory kf22 = KeyFactory.getInstance("EC", BouncyCastleProvider.PROVIDER_NAME);
+            PrivateKey pvk = kf22.generatePrivate(eks2);
+            BCECPrivateKey priKey = (BCECPrivateKey) pvk;
+            return priKey;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * byte数组转成公钥
+     * @param publicBytes
+     * @return
+     */
+    public static BCECPublicKey convertToBCECPublicKey(byte[] publicBytes) {
+        try {
+            X509EncodedKeySpec eks = new X509EncodedKeySpec(publicBytes);
+            KeyFactory kf = KeyFactory.getInstance("EC", BouncyCastleProvider.PROVIDER_NAME);
+            BCECPublicKey pubKey = (BCECPublicKey) kf.generatePublic(eks);
+            return pubKey;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
 
     /**
      * @param mode    指定密文结构，旧标准的为C1C2C3，新的[《SM2密码算法使用规范》 GM/T 0009-2012]标准为C1C3C2
@@ -167,7 +201,7 @@ public class SM2Util extends GMBaseUtil {
      * @return 原文。SM2解密返回了数据则一定是原文，因为SM2自带校验，如果密文被篡改或者密钥对不上，都是会直接报异常的。
      * @throws InvalidCipherTextException
      */
-    public static byte[] decrypt(BCECPrivateKey priKey, byte[] sm2Cipher) throws InvalidCipherTextException {
+    public static byte[] decrypt(ECPrivateKey priKey, byte[] sm2Cipher) throws InvalidCipherTextException {
         ECPrivateKeyParameters priKeyParameters = BCECUtil.convertPrivateKeyToParameters(priKey);
         return decrypt(Mode.C1C3C2, priKeyParameters, sm2Cipher);
     }
